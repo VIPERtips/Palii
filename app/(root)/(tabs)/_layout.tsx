@@ -15,7 +15,7 @@ const TabIcon = ({
   return (
     <View
       className={`items-center justify-center rounded-full mt-3 ${
-        focused ? "bg-[#2563EB]/10" : ""
+        focused ? "bg-[#5EEAD4]/10" : ""
       }`}
       style={{
         width: iconSize + 28,
@@ -26,7 +26,7 @@ const TabIcon = ({
     >
       <View
         className={`items-center justify-center rounded-full ${
-          focused ? "bg-[#2563EB]" : "bg-[#E0E7FF]"
+         focused ? "bg-[#14B8A6]" : "bg-[#CCFBF1]"
         }`}
         style={{
           width: iconSize + 8,
@@ -41,7 +41,7 @@ const TabIcon = ({
           style={{
             width: iconSize,
             height: iconSize,
-            tintColor: focused ? "white" : "#2563EB",
+            tintColor: focused ? "white" : "#14B8A6",
           }}
         />
       </View>
@@ -59,7 +59,7 @@ export default function Layout() {
     <Tabs
       initialRouteName="home"
       screenOptions={{
-        tabBarActiveTintColor: "#2563EB",
+        tabBarActiveTintColor: "#14B8A6",
         tabBarInactiveTintColor: "#6B7280",
         tabBarShowLabel: false,
         tabBarItemStyle: {
@@ -68,7 +68,7 @@ export default function Layout() {
           paddingVertical: 0,
         },
         tabBarStyle: {
-          backgroundColor: "#F3F4F6",
+          backgroundColor: "#F0FDFA",
           borderRadius: 40,
           overflow: "hidden",
           marginHorizontal: horizontalMargin,
@@ -80,7 +80,7 @@ export default function Layout() {
           justifyContent: "center",
           alignItems: "center",
           elevation: 8,
-          shadowColor: "#000",
+          shadowColor: "#14B8A6",
           shadowOpacity: 0.1,
           shadowRadius: 6,
           shadowOffset: { width: 0, height: 3 },
