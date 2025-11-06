@@ -1,14 +1,17 @@
+import AnimatedSplash from "@/components/AnimatedSplash";
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "./globals.css";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [showSplash, setShowSplash] = useState(true);
+
   const [loaded] = useFonts({
     "Jakarta-Bold": require("../assets/fonts/PlusJakartaSans-Bold.ttf"),
     "Jakarta-ExtraBold": require("../assets/fonts/PlusJakartaSans-ExtraBold.ttf"),
@@ -20,11 +23,14 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) SplashScreen.hideAsync();
-  }, [loaded]);
+    if (!showSplash && loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [showSplash, loaded]);
 
-  if (!loaded) return null;
-
+  if (!loaded || showSplash) {
+    return <AnimatedSplash onFinish={() => setShowSplash(false)} />;
+  }
   const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   if (!publishableKey && __DEV__) {

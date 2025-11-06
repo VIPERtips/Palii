@@ -3,7 +3,6 @@
     "name": "Syna",
     "slug": "syna",
     "version": "1.0.0",
-   //  "platforms": ["ios", "android"],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pali",
@@ -32,10 +31,10 @@
       [
         "expo-splash-screen",
         {
-      "image": "./assets/images/syna-splash-screen.svg",
-      "resizeMode": "contain",
-      "backgroundColor": "#008080", // teal background
-      "imageWidth": 200
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#008080",
+          "imageWidth": 200
         }
       ]
     ],
@@ -43,9 +42,11 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "origin": "https://syna.blexta.co.zw/"
+      },
       "eas": {
-        "projectId": ""
+        "projectId": "ecf9196c-b46b-4c5b-81fa-0cbff01d28d0"
       }
     }
   }
