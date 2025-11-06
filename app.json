@@ -3,6 +3,7 @@
     "name": "Syna",
     "slug": "syna",
     "version": "1.0.0",
+    "platforms": ["android","ios"],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pali",
@@ -16,11 +17,11 @@
       "edgeToEdgeEnabled": true,
       "package": "co.zw.blexta.palii"
     },
-    "web": {
-      "bundler": "metro",
-      "output": "server",
-      "favicon": "./assets/images/icon.png"
-    },
+    // "web": {
+    //   "bundler": "metro",
+    //   "output": "server",
+    //   "favicon": "./assets/images/icon.png"
+    // },
     "plugins": [
       [
         "expo-router",
@@ -43,7 +44,7 @@
     },
     "extra": {
       "router": {
-        "origin": "https://syna.blexta.co.zw/"
+        "origin": "https://pali.blexta.co.zw/"
       },
       "eas": {
         "projectId": "ecf9196c-b46b-4c5b-81fa-0cbff01d28d0"
