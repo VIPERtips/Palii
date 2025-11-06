@@ -45,7 +45,7 @@ const { width } = Dimensions.get("window");
 export default function HealthTipsCarousel() {
   return (
     <View 
-          className="bg-gradient-to-br from-pali-secondary/20 to-pali-secondary/5 rounded-3xl p-6 border border-pali-secondary/20 cursor-grab mb-5"
+          className="bg-gradient-to-br from-pali-secondary/20 to-pali-secondary/5 rounded-3xl p-6 border border-pali-secondary/20 mb-5"
           style={{
             shadowColor: "#00D4AA",
             shadowOffset: { width: 0, height: 6 },
@@ -63,7 +63,7 @@ export default function HealthTipsCarousel() {
         </Text>
       </View>
 
-    <View className="mt-6">
+    <View className="mt-6 cursor-pointer">
       <FlatList
         data={tips}
         horizontal

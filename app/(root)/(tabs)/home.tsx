@@ -96,35 +96,7 @@ export default function Home() {
     </View>
 
     
-    <View className="flex-row mt-6 space-x-3">
-      <View 
-        className="flex-1 bg-white/5 rounded-2xl px-4 py-3 border border-white/10"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-        }}
-      >
-        <Text className="text-gray-400 text-xs font-JakartaSemiBold">Today</Text>
-        <Text className="text-pali-popover-foreground text-xl font-JakartaBold mt-1">3 Tasks</Text>
-      </View>
-      
-      <View 
-        className="flex-1 bg-white/5 rounded-2xl px-4 py-3 border border-white/10"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-        }}
-      >
-        <Text className="text-gray-400 text-xs font-JakartaSemiBold">Upcoming</Text>
-        <Text className="text-pali-popover-foreground text-xl font-JakartaBold mt-1">12 Events</Text>
-      </View>
-    </View>
+    
   </View>
 
   {/* Scrollable Content */}
