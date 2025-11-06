@@ -22,7 +22,6 @@ export default function QuickActionCard({ item, onPress }: any) {
           shadowRadius: 10,
           elevation: 6,
           backgroundColor: "white",
-      
         }}
       >
         {/* Icon container */}
@@ -34,8 +33,7 @@ export default function QuickActionCard({ item, onPress }: any) {
             shadowOpacity: 0.3,
             shadowRadius: 8,
             elevation: 4,
-            backgroundColor: "#fff"
-            
+            backgroundColor: "#fff",
           }}
         >
           <Ionicons name={item.icon} size={36} color={item.color} />
@@ -48,7 +46,19 @@ export default function QuickActionCard({ item, onPress }: any) {
 
         {/* Subtitle */}
         <Text className="text-pali-secondary/60 text-sm font-JakartaMedium text-center mt-1">
-          {item.id === "book" ? "Schedule" : "Engage"}
+          {item.id === "book"
+            ? "Schedule"
+            : item.id === "alerts"
+            ? "Notify"
+            : item.id === "history"
+            ? "View"
+            : item.id === "doctors"
+            ? "Find"
+            : item.id === "prescriptions"
+            ? "View"
+            : item.id === "reports"
+            ? "Check"
+            : "Go"}
         </Text>
       </LinearGradient>
     </TouchableOpacity>

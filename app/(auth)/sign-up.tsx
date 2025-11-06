@@ -19,6 +19,7 @@ import OAuth from "@/components/OAuth";
 import { icons, images } from "@/constants";
 import { fetchAPI } from "@/lib/fetch";
 import { useSignUp } from "@clerk/clerk-expo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -76,7 +77,7 @@ export default function SignUp() {
 
       if (attempt.status === "complete") {
       
-        await fetchAPI(
+      const res =  await fetchAPI(
           `${process.env.EXPO_PUBLIC_SERVER_URL}/api/users/signup`,
           {
             method: "POST",
@@ -95,6 +96,7 @@ export default function SignUp() {
           }
         );
 
+        await AsyncStorage.setItem("userRole", res.data.role);
         await setActive({ session: attempt.createdSessionId });
 
         setVerification({ ...verification, state: "success" });

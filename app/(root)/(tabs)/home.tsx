@@ -5,8 +5,9 @@ import PatientScheduled from "@/components/PatientScheduled";
 import QuickActionCard from "@/components/QuickActionCard";
 import { icons } from "@/constants";
 import { useAuth, useUser } from "@clerk/clerk-expo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -15,6 +16,31 @@ export default function Home() {
   const { signOut } = useAuth();
   
   const [userRole, setUserRole] = useState<"patient" | "doctor">("patient");
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const role = await AsyncStorage.getItem("userRole");
+        if (role === "doctor" || role === "patient") {
+          setUserRole(role);
+        }
+      } catch (err) {
+        console.log("Failed to fetch user role:", err);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
+  if (!userRole) {
+  return (
+    <SafeAreaView className="bg-teal-900 flex-1 justify-center items-center">
+      <View className="bg-teal-700 p-4 rounded-lg shadow-md">
+        <Text className="text-teal-200 text-lg font-semibold">Loading...</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
 
 
   const patientActions = [
