@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import CustomButton from "@/components/CustomButton";
 import InputField from "@/components/InputField";
 import OAuth from "@/components/OAuth";
@@ -22,71 +23,66 @@ export default function SignIn() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const { getToken } = useAuth();
-  const { signOut } = useAuth(); 
-
+  const { signOut } = useAuth();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const onSignInPress = async () => {
-  if (!isLoaded) return;
-  setLoading(true);
+    if (!isLoaded) return;
+    setLoading(true);
 
-  try {
-    const signInAttempt = await signIn.create({
-      identifier: form.email,
-      password: form.password,
-    });
+    try {
+      const signInAttempt = await signIn.create({
+        identifier: form.email,
+        password: form.password,
+      });
 
-    if (signInAttempt.status === "complete") {
-      await setActive({ session: signInAttempt.createdSessionId });
+      if (signInAttempt.status === "complete") {
+        await setActive({ session: signInAttempt.createdSessionId });
 
-      const token = await getToken();
-      console.log("Clerk JWT:", token);
+        const token = await getToken();
+        console.log("Clerk JWT:", token);
+        await AsyncStorage.setItem("token", String(token));
 
-      console.log("hey")
+        console.log("hey");
 
-      const response = await fetchAPI(
-        `${process.env.EXPO_PUBLIC_SERVER_URL}/api/users/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-      console.log("Backend response:", data);
-
-      // Check if backend returned essential data
-      if (!response.ok || !data?.data?.role) {
-        Alert.alert(
-          "Login Error",
-          data.message || "Incomplete user data. Signing out..."
+        const data = await fetchAPI(
+          `${process.env.EXPO_PUBLIC_SERVER_URL}/api/users/login`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
-        await signOut(); 
-        return;
+
+        
+        if (!data?.data?.role) {
+          Alert.alert(
+            "Login Error",
+            data.message || "Incomplete user data. Signing out..."
+          );
+          await signOut();
+          return;
+        }
+
+        
+        await AsyncStorage.setItem("userRole", data.data.role);
+
+        
+        router.push("/(root)/(tabs)/home");
+      } else {
+        Alert.alert("Error", "Sign in incomplete");
       }
-
-      // Store user role locally for app access control
-      await AsyncStorage.setItem("userRole", data.data.role);
-
-      // Navigate to home
-      router.push("/(root)/(tabs)/home");
-    } else {
-      Alert.alert("Error", "Sign in incomplete");
+    } catch (err: any) {
+      Alert.alert("Sign In Error", err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
-  } catch (err: any) {
-    Alert.alert("Sign In Error", err.message || "Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  };
 
   return (
     <ScrollView className="flex-1 bg-white">
@@ -150,7 +146,11 @@ export default function SignIn() {
               disabled={loading}
             />
             {loading && (
-              <ActivityIndicator size="large" color="#0286ff" className="mt-4" />
+              <ActivityIndicator
+                size="large"
+                color="#0286ff"
+                className="mt-4"
+              />
             )}
           </View>
 
@@ -159,7 +159,9 @@ export default function SignIn() {
       </View>
 
       <View className="flex-row justify-center mt-5">
-        <Text className="text-gray-500 text-[14px]">Don't have an account? </Text>
+        <Text className="text-gray-500 text-[14px]">
+          Don't have an account?{" "}
+        </Text>
         <Link
           href="/(auth)/sign-up"
           className="text-primary-500 font-JakartaSemiBold text-[14px]"

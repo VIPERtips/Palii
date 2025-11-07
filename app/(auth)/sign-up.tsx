@@ -18,11 +18,12 @@ import InputField from "@/components/InputField";
 import OAuth from "@/components/OAuth";
 import { icons, images } from "@/constants";
 import { fetchAPI } from "@/lib/fetch";
-import { useSignUp } from "@clerk/clerk-expo";
+import { useAuth, useSignUp } from "@clerk/clerk-expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
+  const { getToken } = useAuth();
 
 
   const [form, setForm] = useState({
@@ -98,6 +99,9 @@ export default function SignUp() {
 
         await AsyncStorage.setItem("userRole", res.data.role);
         await setActive({ session: attempt.createdSessionId });
+        const token = await getToken();
+        await AsyncStorage.setItem("token", String(token));
+        console.log("Clerk JWT stored:", token);
 
         setVerification({ ...verification, state: "success" });
 

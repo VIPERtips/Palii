@@ -14,7 +14,7 @@ interface MapProps {
 
 const Map: React.FC<MapProps> = ({ onLocationSelect }) => {
   const [region, setRegion] = useState({
-    latitude: -17.824858, // default Harare
+    latitude: -17.824858,
     longitude: 31.053028,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,

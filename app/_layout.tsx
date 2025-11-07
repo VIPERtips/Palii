@@ -5,6 +5,7 @@ import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import "./globals.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -27,6 +28,7 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [showSplash, loaded]);
+  
 
   if (!loaded || showSplash) {
     return <AnimatedSplash onFinish={() => setShowSplash(false)} />;
@@ -40,13 +42,15 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <StatusBar style="dark" />
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(root)" options={{ headerShown: false }} />
-      </Stack>
-    </ClerkProvider>
+    <SafeAreaProvider>
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(root)" />
+          </Stack>
+        </ClerkProvider>
+    </SafeAreaProvider>
   );
 }

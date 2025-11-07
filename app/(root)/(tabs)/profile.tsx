@@ -1,9 +1,14 @@
+/* eslint-disable react/no-unescaped-entities */
 import Map from "@/components/Map";
+import { fetchAPI } from "@/lib/fetch";
 import { useAuth, useUser } from "@clerk/clerk-expo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   Text,
@@ -20,6 +25,7 @@ export default function Profile() {
   const [isModalVisible, setModalVisible] = useState(false);
   const [userType, setUserType] = useState("patient");
   const [fetchedUser, setFetchedUser] = useState<any>("");
+  const [Loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
     specialty: "",
@@ -29,10 +35,13 @@ export default function Profile() {
     latitude: "",
     longitude: "",
     rating: 0,
+    imageUrl: "",
   });
 
   const fetchUser = async () => {
     try {
+      setLoading(true);
+
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_SERVER_URL}/api/users/current?clerkUserId=${user?.id}`,
         {
@@ -44,27 +53,122 @@ export default function Profile() {
       );
 
       const data = await response.json();
-      setFetchedUser(data?.data);
-      setUserType(fetchedUser?.role?.toLowerCase() || "patient");
-    console.log("User type:", fetchedUser?.role?.toLowerCase());
-      
+      const currentUser = data?.data;
+
+      setFetchedUser(currentUser);
+      setUserType(currentUser?.role?.toLowerCase() || "patient");
+      setLoading(false);
     } catch (error) {
       console.error("Error logging in:", error);
+      setLoading(false);
     }
   };
+
+  const fetchDoctorStatus = async () => {
+  if (!user) return;
+
+  try {
+    setLoading(true);
+    const token = await AsyncStorage.getItem("token");
+    const headers: HeadersInit = token
+      ? { Authorization: `Bearer ${token}` }
+      : {};
+
+      console.log(token)
+
+    const data = await fetchAPI(
+      `${process.env.EXPO_PUBLIC_SERVER_URL}/api/doctors/current`,
+      {
+        headers,
+      }
+    );
+
+   
+    console.log(data)
+    if (data.success && data.data) {
+      setFetchedUser((prev: any) => ({ ...prev, doctorInfo: data.data }));
+      setUserType("doctor");
+    } else {
+      setFetchedUser((prev: any) => ({ ...prev, doctorInfo: null }));
+    }
+  } catch (err) {
+    console.log("Error fetching doctor status:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fullName = user?.firstName + " " + user?.lastName;
 
   const toggleModal = () => setModalVisible(!isModalVisible);
 
-  const submitDoctorRequest = () => {
-  console.log(form);
-    setModalVisible(false);
+  const submitDoctorRequest = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+
+      const dto = JSON.stringify({
+        fullName: form.fullName,
+        specialty: form.specialty,
+        bio: form.bio,
+        education: form.education,
+        address: form.address,
+        latitude: form.latitude,
+        longitude: form.longitude,
+      });
+      formData.append("dto", dto);
+
+      if (form.imageUrl) {
+        const filename = form.imageUrl.split("/").pop()!;
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+
+        formData.append("image", {
+          uri: form.imageUrl,
+          name: filename,
+          type,
+        } as any);
+      }
+
+      const response = await fetchAPI(
+        `${process.env.EXPO_PUBLIC_SERVER_URL}/api/doctors?clerkUserId=${user.id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+      console.log("Doctor request submitted:", data);
+      setModalVisible(false);
+      setForm({
+      fullName: "",
+      specialty: "",
+      bio: "",
+      education: "",
+      address: "",
+      latitude: "",
+      longitude: "",
+      rating: 0,
+      imageUrl: "",
+    });
+    } catch (error) {
+      console.error("Error submitting doctor request:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchUser();
-  }, []);
+  fetchUser();
+  fetchDoctorStatus();
+}, []);
 
   const renderPatientProfile = () => (
     <>
@@ -463,94 +567,191 @@ export default function Profile() {
       </ScrollView>
 
       <Modal
-        isVisible={isModalVisible}
+        isVisible={isModalVisible} // fixed your !isModalVisible issue
         onBackdropPress={toggleModal}
-        style={{ justifyContent: "flex-end", margin: 0, height: 720 }}
+        style={{ justifyContent: "flex-end", margin: 0 }}
         animationIn="slideInUp"
         animationOut="slideOutDown"
       >
-        <View className="bg-white rounded-t-3xl p-6 shadow-2xl">
-          <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
+        <View
+          className="bg-white rounded-t-3xl p-6 shadow-2xl"
+          style={{ maxHeight: "90%" }}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
 
-          <Text className="text-gray-900 text-2xl font-bold mb-2">
-            Become a Doctor
-          </Text>
-          <Text className="text-gray-600 text-sm mb-6">
-            Fill in your details to request a doctor account
-          </Text>
-
-          <Text className="text-gray-700 font-semibold mb-2">Full Name</Text>
-          <TextInput
-            placeholder="Tadiwa Blessed"
-            className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 text-base"
-            value={fullName}
-            onChangeText={(val) => setForm({ ...form, fullName: val })}
-          />
-
-          <Text className="text-gray-700 font-semibold mb-2">Specialty</Text>
-          <TextInput
-            placeholder="General Practitioner"
-            className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 text-base"
-            value={form.specialty}
-            onChangeText={(val) => setForm({ ...form, specialty: val })}
-          />
-
-          {/* Bio */}
-          <Text className="text-gray-700 font-semibold mb-2">Short Bio</Text>
-          <TextInput
-            placeholder="A short description about yourself"
-            className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 text-base"
-            value={form.bio}
-            onChangeText={(val) => setForm({ ...form, bio: val })}
-            multiline={true}
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-
-          {/* Education */}
-          <Text className="text-gray-700 font-semibold mb-2">Education</Text>
-          <TextInput
-            placeholder="Medical School / University"
-            className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 text-base"
-            value={form.education}
-            onChangeText={(val) => setForm({ ...form, education: val })}
-          />
-
-          <Text className="text-gray-700 font-semibold mb-2">
-            Clinic Location
-          </Text>
-          <View className="bg-gray-100 rounded-2xl overflow-hidden mb-3 self-center">
-            <View style={{ width: 350, height: 250, borderRadius: 16 }}>
-              <Map
-                onLocationSelect={({ latitude, longitude, address }) =>
-                  setForm({
-                    ...form,
-                    latitude: latitude.toString(),
-                    longitude: longitude.toString(),
-                    address,
-                  })
-                }
-              />
-            </View>
-          </View>
-          <Text className="text-gray-500 text-sm mb-6">
-            Tap on the map to select your clinic location
-          </Text>
-
-          <TouchableOpacity
-            onPress={submitDoctorRequest}
-            className="bg-teal-600 rounded-2xl py-4 items-center mb-3 shadow-lg"
-            activeOpacity={0.8}
-          >
-            <Text className="text-white font-bold text-base">
-              Submit Request
+            <Text className="text-gray-900 text-2xl font-bold mb-2">
+              Become a Doctor
             </Text>
-          </TouchableOpacity>
+            <Text className="text-gray-600 text-sm mb-6">
+              Fill in your details to request a doctor account
+            </Text>
 
-          {/* Cancel Button */}
-          <TouchableOpacity onPress={toggleModal} className="py-3 items-center">
-            <Text className="text-gray-500 font-medium">Cancel</Text>
-          </TouchableOpacity>
+            <Text className="text-gray-700 font-semibold mb-2">Full Name</Text>
+            <TextInput
+              placeholder="Tadiwa Blessed"
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 text-base"
+              value={fullName}
+              onChangeText={(val) => setForm({ ...form, fullName: val })}
+            />
+
+            <Text className="text-gray-700 font-semibold mb-2">Specialty</Text>
+            <TextInput
+              placeholder="General Practitioner"
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 text-base"
+              value={form.specialty}
+              onChangeText={(val) => setForm({ ...form, specialty: val })}
+            />
+
+            <Text className="text-gray-700 font-semibold mb-2">Short Bio</Text>
+            <TextInput
+              placeholder="A short description about yourself"
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 text-base"
+              value={form.bio}
+              onChangeText={(val) => setForm({ ...form, bio: val })}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+
+            <Text className="text-gray-700 font-semibold mb-2">Education</Text>
+            <TextInput
+              placeholder="Medical School / University"
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 text-base"
+              value={form.education}
+              onChangeText={(val) => setForm({ ...form, education: val })}
+            />
+
+            <Text className="text-gray-700 font-semibold mb-2">
+              Profile Picture
+            </Text>
+            <TouchableOpacity
+              onPress={async () => {
+                const { status } =
+                  await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (status !== "granted") {
+                  alert("Permission denied!");
+                  return;
+                }
+
+                const result = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                  quality: 0.7,
+                });
+
+                if (!result.canceled) {
+                  setForm({ ...form, imageUrl: result.assets[0].uri });
+                }
+              }}
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-4 mb-4 items-center flex-row"
+            >
+              <Text className="text-gray-500">
+                {form.imageUrl ? "Change Image" : "Select Image"}
+              </Text>
+              {form.imageUrl && (
+                <Image
+                  source={{ uri: form.imageUrl }}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 50,
+                    marginLeft: 30,
+                    justifyContent: "flex-end",
+                    alignItems: "flex-end",
+                  }}
+                />
+              )}
+            </TouchableOpacity>
+
+            <Text className="text-gray-700 font-semibold mb-2">
+              Clinic Location
+            </Text>
+            <View className="bg-gray-100 rounded-2xl overflow-hidden mb-3 self-center">
+              <View style={{ width: 350, height: 250, borderRadius: 16 }}>
+                <Map
+                  onLocationSelect={({ latitude, longitude, address }) =>
+                    setForm({
+                      ...form,
+                      latitude: latitude.toString(),
+                      longitude: longitude.toString(),
+                      address,
+                    })
+                  }
+                />
+              </View>
+            </View>
+            <Text className="text-gray-500 text-sm mb-6">
+              Tap on the map to select your clinic location
+            </Text>
+            <Text className="text-gray-700 font-semibold mb-1">
+              Selected Clinic Address
+            </Text>
+            <TextInput
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 mb-4 text-base"
+              value={form.address}
+              editable={false}
+            />
+
+            <TouchableOpacity
+              onPress={submitDoctorRequest}
+              className="bg-teal-600 rounded-2xl py-4 items-center mb-3 shadow-lg flex-row justify-center"
+              activeOpacity={0.8}
+              disabled={Loading}
+            >
+              {Loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text className="text-white font-bold text-base">
+                  Submit Request
+                </Text>
+              )}
+            </TouchableOpacity>
+            {fetchedUser?.doctorInfo ? (
+  <View className="mb-4 items-center">
+    <Text className="text-gray-700 font-semibold mb-2">
+      Doctor Request Status:
+    </Text>
+    <View className="bg-yellow-100 px-4 py-2 rounded-2xl">
+      <Text className="text-yellow-800 font-bold">
+        {fetchedUser.doctorInfo.accountStatus}
+      </Text>
+    </View>
+
+    {fetchedUser.doctorInfo.accountStatus === "PENDING" && (
+      <TouchableOpacity
+        onPress={() => alert("Your doctor request is still pending")}
+        className="bg-teal-600 rounded-2xl py-4 px-6 mt-4"
+      >
+        <Text className="text-white font-bold text-base">
+          Check Status
+        </Text>
+      </TouchableOpacity>
+    )}
+  </View>
+) : (
+  <TouchableOpacity
+    onPress={submitDoctorRequest}
+    className="bg-teal-600 rounded-2xl py-4 px-6 mb-3 flex-row justify-center items-center"
+    disabled={Loading}
+  >
+    {Loading ? (
+      <ActivityIndicator size="small" color="white" />
+    ) : (
+      <Text className="text-white font-bold text-base">
+        Submit Request
+      </Text>
+    )}
+  </TouchableOpacity>
+)}
+
+
+            <TouchableOpacity
+              onPress={toggleModal}
+              className="py-3 items-center"
+            >
+              <Text className="text-gray-500 font-medium">Cancel</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </Modal>
     </SafeAreaView>
