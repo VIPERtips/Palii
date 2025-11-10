@@ -3,6 +3,7 @@ import CustomButton from "@/components/CustomButton";
 import InputField from "@/components/InputField";
 import OAuth from "@/components/OAuth";
 import { icons, images } from "@/constants";
+import { useUserContext } from "@/context/userContext";
 import { fetchAPI } from "@/lib/fetch";
 import { useAuth, useSignIn } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,7 +25,7 @@ export default function SignIn() {
   const router = useRouter();
   const { getToken } = useAuth();
   const { signOut } = useAuth();
-
+  const { setUser } = useUserContext();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,9 +47,9 @@ export default function SignIn() {
         console.log("Clerk JWT:", token);
         await AsyncStorage.setItem("token", String(token));
 
-        console.log("hey");
+      
 
-        const data = await fetchAPI(
+        const res = await fetchAPI(
           `${process.env.EXPO_PUBLIC_SERVER_URL}/api/users/login`,
           {
             method: "POST",
@@ -60,19 +61,17 @@ export default function SignIn() {
         );
 
         
-        if (!data?.data?.role) {
+        if (!res?.data?.role) {
           Alert.alert(
             "Login Error",
-            data.message || "Incomplete user data. Signing out..."
+            res.message || "Incomplete user data. Signing out..."
           );
           await signOut();
           return;
         }
 
-        
-        await AsyncStorage.setItem("userRole", data.data.role);
-
-        
+        setUser(res.data);
+        await AsyncStorage.setItem("userRole", res.data.role);
         router.push("/(root)/(tabs)/home");
       } else {
         Alert.alert("Error", "Sign in incomplete");

@@ -1,7 +1,9 @@
 /* eslint-disable react/no-unescaped-entities */
 import Map from "@/components/Map";
+import { getAuthHeaders } from "@/lib";
 import { fetchAPI } from "@/lib/fetch";
 import { useAuth, useUser } from "@clerk/clerk-expo";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -38,68 +40,61 @@ export default function Profile() {
     imageUrl: "",
   });
   const [isPendingModalVisible, setPendingModalVisible] = useState(false);
+  const [accountStatus, setAccountStatus] = useState<
+    "APPROVED" | "PENDING" | "REJECTED" | null
+  >(null);
 
   const openPendingModal = () => setPendingModalVisible(true);
   const closePendingModal = () => setPendingModalVisible(false);
+  
 
-  const fetchUser = async () => {
-    try {
-      setLoading(true);
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const headers = await getAuthHeaders();
 
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_SERVER_URL}/api/users/current?clerkUserId=${user?.id}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+        const userResponse = await fetchAPI(
+          `${process.env.EXPO_PUBLIC_SERVER_URL}/api/users/current?clerkUserId=${user.id}`,
+          { headers }
+        );
+        const userData = await userResponse.json();
+        const currentUser = userData?.data;
+
+        const doctorData = await fetchAPI(
+          `${process.env.EXPO_PUBLIC_SERVER_URL}/api/doctors/current`,
+          { headers }
+        );
+
+        const mergedUser = {
+          ...currentUser,
+          doctorInfo: doctorData?.data || null,
+        };
+
+        setFetchedUser(mergedUser);
+      
+
+        if (doctorData?.data) {
+          setUserType("doctor");
+          setAccountStatus(doctorData.data.accountStatus);
+        } else {
+          setUserType("patient");
+          setAccountStatus(null);
         }
-      );
 
-      const data = await response.json();
-      const currentUser = data?.data;
-
-      setFetchedUser(currentUser);
-      setUserType(currentUser?.role?.toLowerCase() || "patient");
-      setLoading(false);
-    } catch (error) {
-      console.error("Error logging in:", error);
-      setLoading(false);
-    }
-  };
-
-  const fetchDoctorStatus = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem("token");
-      const headers: HeadersInit = token
-        ? { Authorization: `Bearer ${token}` }
-        : {};
-
-      console.log(token);
-
-      const data = await fetchAPI(
-        `${process.env.EXPO_PUBLIC_SERVER_URL}/api/doctors/current`,
-        {
-          headers,
+        if (doctorData?.data?.accountStatus === "PENDING") {
+          setPendingModalVisible(true);
         }
-      );
-
-      console.log(data);
-      if (data.success && data.data) {
-        setFetchedUser((prev: any) => ({ ...prev, doctorInfo: data.data }));
-        setUserType("doctor");
-      } else {
-        setFetchedUser((prev: any) => ({ ...prev, doctorInfo: null }));
+      } catch (err) {
+        console.log("Error fetching user info:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.log("Error fetching doctor status:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchCurrentUser();
+  }, [user]);
 
   const fullName = user?.firstName + " " + user?.lastName;
 
@@ -149,6 +144,10 @@ export default function Profile() {
 
       const data = await response.json();
       console.log("Doctor request submitted:", data);
+
+      if (data?.accountStatus === "PENDING") {
+        openPendingModal();
+      }
       setModalVisible(false);
       setForm({
         fullName: "",
@@ -167,11 +166,6 @@ export default function Profile() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchUser();
-    fetchDoctorStatus();
-  }, []);
 
   const renderPatientProfile = () => (
     <>
@@ -358,7 +352,7 @@ export default function Profile() {
       >
         <View className="flex-row items-center">
           <Image
-            source={{ uri: user?.imageUrl }}
+            source={{ uri: fetchedUser?.doctorInfo.imageUrl || user?.imageUrl }}
             className="w-24 h-24 rounded-full border-4 border-white"
           />
           <View className="ml-5 flex-1">
@@ -366,17 +360,12 @@ export default function Profile() {
               Dr. {user?.firstName} {user?.lastName}
             </Text>
             <Text className="text-blue-100 text-sm mt-1">
-              {fetchedUser?.specialty || "N/A"}
+              {fetchedUser?.doctorInfo.specialty || "N/A"}
             </Text>
             <View className="flex-row items-center mt-2">
-              <View className="bg-white/20 px-3 py-1 rounded-full mr-2">
-                <Text className="text-white text-xs font-medium">
-                  {fetchedUser?.experience || "N/A"}
-                </Text>
-              </View>
               <View className="bg-white/20 px-3 py-1 rounded-full">
                 <Text className="text-white text-xs font-medium">
-                  ⭐ {fetchedUser?.avgRating || "0.0"}
+                  ⭐ {fetchedUser?.doctorInfo.avgRating || "0.0"}
                 </Text>
               </View>
             </View>
@@ -415,28 +404,21 @@ export default function Profile() {
         <View className="mb-4">
           <Text className="text-gray-500 text-xs mb-1">Specialty</Text>
           <Text className="text-gray-900 text-base">
-            {fetchedUser?.specialty}
+            {fetchedUser?.doctorInfo.specialty || "hey"}
           </Text>
         </View>
 
         <View className="mb-4">
           <Text className="text-gray-500 text-xs mb-1">Primary Clinic</Text>
-          <Text className="text-gray-900 text-base">{fetchedUser?.clinic}</Text>
-        </View>
-
-        <View className="mb-4">
-          <Text className="text-gray-500 text-xs mb-1">Medical License</Text>
-          <Text className="text-gray-900 text-base">
-            {fetchedUser?.license}
-          </Text>
+          <Text className="text-gray-900 text-base">{fetchedUser?.doctorInfo.address}</Text>
         </View>
 
         <View className="mb-4">
           <Text className="text-gray-500 text-xs mb-1">
-            Years of Experience
+            EDUCATION
           </Text>
           <Text className="text-gray-900 text-base">
-            {fetchedUser?.experience}
+            {fetchedUser?.doctorInfo.education}
           </Text>
         </View>
 
@@ -542,6 +524,39 @@ export default function Profile() {
           <Text className="text-red-600 font-semibold">Logout</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        isVisible={isPendingModalVisible}
+        onBackdropPress={closePendingModal}
+        style={{ justifyContent: "center", margin: 20 }}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
+      >
+        <View className="bg-white rounded-3xl p-6 shadow-2xl items-center">
+          <Ionicons name="information-circle" size={48} color="#facc15" />
+          <Text className="text-gray-900 text-xl font-bold mt-4 mb-2">
+            Account Pending
+          </Text>
+          <Text className="text-gray-600 text-center mb-6">
+            Your doctor account request is under review. You’ll be notified once
+            it’s approved.
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => fetchCurrentUser()}
+            className="bg-teal-600 rounded-2xl py-3 px-6"
+          >
+            <Text className="text-white font-bold text-base">Check Status</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={closePendingModal}
+            className="mt-4 py-2 px-6"
+          >
+            <Text className="text-gray-500 font-medium">Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </>
   );
 
@@ -556,6 +571,19 @@ export default function Profile() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      {Loading && (
+        <View
+          style={{
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 999,
+          }}
+        >
+          <ActivityIndicator size="large" color="#14B8A6" />
+        </View>
+      )}
+
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 20,
@@ -564,7 +592,7 @@ export default function Profile() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {userType === "patient"
+        {userType === "patient" || accountStatus !== "APPROVED"
           ? renderPatientProfile()
           : renderDoctorProfile()}
       </ScrollView>

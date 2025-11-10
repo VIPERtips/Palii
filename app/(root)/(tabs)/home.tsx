@@ -4,6 +4,8 @@ import HealthTipsCarousel from "@/components/HealthTipsCarousel";
 import PatientScheduled from "@/components/PatientScheduled";
 import QuickActionCard from "@/components/QuickActionCard";
 import { icons } from "@/constants";
+import { getAuthHeaders } from "@/lib";
+import { fetchAPI } from "@/lib/fetch";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -14,14 +16,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function Home() {
   const { user } = useUser();
   const { signOut } = useAuth();
-  
-  const [userRole, setUserRole] = useState<"patient" | "doctor">("patient");
+  const [availableDoctors, setAvailableDoctors] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<"PATIENT" | "DOCTOR">("PATIENT");
 
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
         const role = await AsyncStorage.getItem("userRole");
-        if (role === "doctor" || role === "patient") {
+        if (role === "DOCTOR" || role === "PATIENT") {
           setUserRole(role);
         }
       } catch (err) {
@@ -29,19 +31,36 @@ export default function Home() {
       }
     };
 
+    const fetchDoctors = async () => {
+      try {
+        const headers = await getAuthHeaders();
+
+        const res = await fetchAPI(
+          `${process.env.EXPO_PUBLIC_SERVER_URL}/api/doctors/verified`,
+          { headers }
+        );
+        console.log(res.data);
+        setAvailableDoctors(res.data);
+      } catch (error) {
+        console.log("Error fetching doctor info:", error);
+      }
+    };
+
     fetchUserRole();
+    fetchDoctors();
   }, []);
 
   if (!userRole) {
-  return (
-    <SafeAreaView className="bg-teal-900 flex-1 justify-center items-center">
-      <View className="bg-teal-700 p-4 rounded-lg shadow-md">
-        <Text className="text-teal-200 text-lg font-semibold">Loading...</Text>
-      </View>
-    </SafeAreaView>
-  );
-}
-
+    return (
+      <SafeAreaView className="bg-teal-900 flex-1 justify-center items-center">
+        <View className="bg-teal-700 p-4 rounded-lg shadow-md">
+          <Text className="text-teal-200 text-lg font-semibold">
+            Loading...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const patientActions = [
     {
@@ -134,37 +153,19 @@ export default function Home() {
     },
   ];
 
-  const quickActions = userRole === "patient" ? patientActions : doctorActions;
+  const quickActions = userRole === "PATIENT" ? patientActions : doctorActions;
 
- 
-  const availableDoctors = [
-    {
-      id: "1",
-      name: "Dr. Austine M",
-      specialty: "Cardiologist",
-      rating: 4.9,
-      available: true,
-      avatar: "https://i.pravatar.cc/150?img=1",
-    },
-    {
-      id: "2",
-      name: "Dr. Tanaka M",
-      specialty: "General Practitioner",
-      rating: 4.8,
-      available: true,
-      avatar: "https://i.pravatar.cc/150?img=5",
-    },
-    {
-      id: "3",
-      name: "Dr. Praise T",
-      specialty: "Pediatrician",
-      rating: 4.9,
-      available: false,
-      avatar: "https://i.pravatar.cc/150?img=5",
-    },
-  ];
+  // const availableDoctors = [
+  //   {
+  //     id: "1",
+  //     name: "Dr. Austine M",
+  //     specialty: "Cardiologist",
+  //     rating: 4.9,
+  //     available: true,
+  //     avatar: "https://i.pravatar.cc/150?img=1",
+  //   }
+  // ];
 
-  
   const todaysPatients = [
     {
       id: "1",
@@ -232,16 +233,13 @@ export default function Home() {
         data={availableDoctors}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.doctorId}
         contentContainerStyle={{ gap: 12 }}
-        renderItem={({ item }) => (
-          <AvailableDoctor doctor={item} />
-        )}
+        renderItem={({ item }) => <AvailableDoctor doctor={item} />}
       />
     </View>
   );
 
- 
   const renderPatientsSection = () => (
     <View className="mb-6">
       <View className="flex-row items-center justify-between mb-4">
@@ -262,16 +260,19 @@ export default function Home() {
 
       <View className="space-y-3">
         {todaysPatients.map((patient, index) => (
-           <PatientScheduled patient={patient} key={index} todaysPatients={todaysPatients} />
+          <PatientScheduled
+            patient={patient}
+            key={index}
+            todaysPatients={todaysPatients}
+          />
         ))}
       </View>
     </View>
   );
 
- 
   const renderDoctorStats = () => (
     <View className="flex-row mt-6 space-x-3">
-      <View 
+      <View
         className="flex-1 bg-white/5 rounded-2xl px-4 py-3 border border-white/10 me-2"
         style={{
           shadowColor: "#000",
@@ -279,16 +280,18 @@ export default function Home() {
           shadowOpacity: 0.1,
           shadowRadius: 4,
           elevation: 3,
-           backgroundColor: "white",
+          backgroundColor: "white",
         }}
       >
-        <Text className="text-gray-400 text-xs font-JakartaSemiBold">Today</Text>
+        <Text className="text-gray-400 text-xs font-JakartaSemiBold">
+          Today
+        </Text>
         <Text className="text-pali-popover-foreground/60  text-xl font-JakartaBold mt-1">
           {todaysPatients.length} Patients
         </Text>
       </View>
-      
-      <View 
+
+      <View
         className="flex-1 bg-white/5 rounded-2xl px-4 py-3 border border-white/10"
         style={{
           shadowColor: "#000",
@@ -296,11 +299,15 @@ export default function Home() {
           shadowOpacity: 0.1,
           shadowRadius: 4,
           elevation: 3,
-           backgroundColor: "white",
+          backgroundColor: "white",
         }}
       >
-        <Text className="text-gray-400 text-xs font-JakartaSemiBold">This Week</Text>
-        <Text className="text-pali-popover-foreground/60  text-xl font-JakartaBold mt-1">47 Total</Text>
+        <Text className="text-gray-400 text-xs font-JakartaSemiBold">
+          This Week
+        </Text>
+        <Text className="text-pali-popover-foreground/60  text-xl font-JakartaBold mt-1">
+          47 Total
+        </Text>
       </View>
     </View>
   );
@@ -308,7 +315,7 @@ export default function Home() {
   // Render Patient Stats (for patients)
   const renderPatientStats = () => (
     <View className="flex-row mt-6 space-x-3">
-      <View 
+      <View
         className="flex-1 bg-white/5 rounded-2xl px-4 py-3 border border-white/10 me-2"
         style={{
           shadowColor: "#000",
@@ -319,11 +326,15 @@ export default function Home() {
           backgroundColor: "white",
         }}
       >
-        <Text className="text-gray-400 text-xs font-JakartaSemiBold">Upcoming</Text>
-        <Text className="text-pali-popover-foreground/60  text-xl font-JakartaBold mt-1">2 Visits</Text>
+        <Text className="text-gray-400 text-xs font-JakartaSemiBold">
+          Upcoming
+        </Text>
+        <Text className="text-pali-popover-foreground/60  text-xl font-JakartaBold mt-1">
+          2 Visits
+        </Text>
       </View>
-      
-      <View 
+
+      <View
         className="flex-1 bg-white/5 rounded-2xl px-4 py-3 border border-white/10"
         style={{
           shadowColor: "#000",
@@ -334,8 +345,12 @@ export default function Home() {
           backgroundColor: "white",
         }}
       >
-        <Text className="text-gray-400 text-xs font-JakartaSemiBold">Completed</Text>
-        <Text className="text-pali-popover-foreground/60 text-xl font-JakartaBold mt-1">12 Total</Text>
+        <Text className="text-gray-400 text-xs font-JakartaSemiBold">
+          Completed
+        </Text>
+        <Text className="text-pali-popover-foreground/60 text-xl font-JakartaBold mt-1">
+          12 Total
+        </Text>
       </View>
     </View>
   );
@@ -348,13 +363,16 @@ export default function Home() {
             <Text className="text-3xl font-JakartaExtraBold leading-tight">
               Welcome,{" "}
               <Text className="text-pali-secondary">
-                {userRole === "doctor" ? "Dr. " : ""}{capitalizedDisplayName}
+                {userRole === "DOCTOR" ? "Dr. " : ""}
+                {capitalizedDisplayName}
               </Text>
             </Text>
             <View className="flex-row items-center mt-2">
               <View className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse mr-2" />
               <Text className="text-sm text-gray-400 font-JakartaSemiBold">
-                {userRole === "doctor" ? "Ready to help patients" : "Linked. Synced. Sorted."}
+                {userRole === "DOCTOR"
+                  ? "Ready to help patients"
+                  : "Linked. Synced. Sorted."}
               </Text>
             </View>
           </View>
@@ -374,56 +392,20 @@ export default function Home() {
             <Image source={icons.out} className="w-5 h-5" tintColor="black" />
           </TouchableOpacity>
         </View>
-
-        {/* Role Toggle (for demo purposes - remove in production) */}
-        <View className="mt-4 flex-row bg-white/5 rounded-2xl p-1 border border-white/10">
-          <TouchableOpacity
-            onPress={() => setUserRole("patient")}
-            className={`flex-1 py-2 rounded-xl ${
-              userRole === "patient" ? "bg-pali-secondary" : ""
-            }`}
-          >
-            <Text
-              className={`text-center font-JakartaSemiBold text-sm ${
-                userRole === "patient" ? "text-white" : "text-gray-400"
-              }`}
-            >
-              Patient
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setUserRole("doctor")}
-            className={`flex-1 py-2 rounded-xl ${
-              userRole === "doctor" ? "bg-blue-600" : ""
-            }`}
-          >
-            <Text
-              className={`text-center font-JakartaSemiBold text-sm ${
-                userRole === "doctor" ? "text-white" : "text-gray-400"
-              }`}
-            >
-              Doctor
-            </Text>
-          </TouchableOpacity>
-        </View>
-        {userRole === "doctor" ? renderDoctorStats() : renderPatientStats()}
+        {userRole === "DOCTOR" ? renderDoctorStats() : renderPatientStats()}
       </View>
 
-      
       <FlatList
         data={quickActions}
         keyExtractor={(item) => item.id.toString()}
         numColumns={3}
-        columnWrapperStyle={{ 
+        columnWrapperStyle={{
           gap: 12,
           paddingHorizontal: 20,
           marginBottom: 12,
         }}
         renderItem={({ item }) => (
-          <QuickActionCard
-            item={item}
-            onPress={() => router.push("/")}
-          />
+          <QuickActionCard item={item} onPress={() => router.push("/")} />
         )}
         contentContainerStyle={{
           paddingTop: 8,
@@ -437,15 +419,17 @@ export default function Home() {
               Quick Actions
             </Text>
             <Text className="text-sm text-gray-400 font-JakartaMedium mt-1">
-              {userRole === "doctor" 
-                ? "Manage your practice efficiently" 
+              {userRole === "DOCTOR"
+                ? "Manage your practice efficiently"
                 : "Choose an action to get started"}
             </Text>
           </View>
         )}
         ListFooterComponent={() => (
-          <View className="px-6 mt-8" >
-            {userRole === "patient" ? renderDoctorsSection() : renderPatientsSection()}
+          <View className="px-6 mt-8">
+            {userRole === "PATIENT"
+              ? renderDoctorsSection()
+              : renderPatientsSection()}
             <HealthTipsCarousel />
           </View>
         )}

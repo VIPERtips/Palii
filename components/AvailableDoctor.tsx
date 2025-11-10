@@ -19,7 +19,7 @@ export default function AvailableDoctor({ doctor }: any) {
       <View className="doctors-center">
         <View className="relative items-center">
           <Image
-            source={{ uri: doctor.avatar }}
+            source={{ uri: doctor.imageUrl }}
             style={{ width: 56, height: 56, borderRadius: 28 }}
           />
           <View
@@ -38,7 +38,7 @@ export default function AvailableDoctor({ doctor }: any) {
         </View>
 
         <Text className="text-text-pali-popover-foreground/60  font-JakartaBold text-sm mt-3 text-center">
-          {doctor.name}
+          {doctor.fullName}
         </Text>
         <Text className="text-gray-400 font-JakartaMedium text-xs mt-1">
           {doctor.specialty}
@@ -46,8 +46,8 @@ export default function AvailableDoctor({ doctor }: any) {
 
         <View className="flex-row doctors-center mt-2">
           <Ionicons name="star" size={14} color="#FFA500" />
-          <Text className="text-white font-JakartaSemiBold text-xs ml-1">
-            {doctor.rating}
+          <Text className="text-gray-500 font-JakartaSemiBold text-xs ml-1">
+            {doctor.avgRating}
           </Text>
         </View>
 
