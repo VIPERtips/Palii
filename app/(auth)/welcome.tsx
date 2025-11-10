@@ -21,7 +21,6 @@ export default function Onboarding() {
 
   return (
     <SafeAreaView className="flex-1 bg-pali-background">
-    
       <View className="w-full flex-row justify-end px-5 pt-5">
         <TouchableOpacity
           onPress={() => router.replace("/(auth)/sign-up")}
@@ -33,12 +32,13 @@ export default function Onboarding() {
         </TouchableOpacity>
       </View>
 
-      
       <Swiper
         ref={swiperRef}
         loop={false}
         dot={<View className="w-8 h-1 bg-pali-muted rounded-full mx-1" />}
-        activeDot={<View className="w-8 h-1 bg-pali-primary rounded-full mx-1" />}
+        activeDot={
+          <View className="w-8 h-1 bg-pali-primary rounded-full mx-1" />
+        }
         onIndexChanged={(idx) => setActiveIndex(idx)}
         containerStyle={{ flexGrow: 1 }}
       >
@@ -47,24 +47,24 @@ export default function Onboarding() {
             key={item.id}
             className="flex-1 justify-center items-center px-8"
           >
-          
             <Image
               source={item.image}
-              className="w-full h-64 rounded-2xl"
-              resizeMode="contain"
+              style={{
+                width: "100%",
+                height: 256,
+                borderRadius: 16,
+                resizeMode: "contain",
+              }}
             />
 
-          
             <Text className="text-pali-foreground text-4xl font-bold text-center mt-10 leading-snug">
               {item.title}
             </Text>
 
-            
             <Text className="text-pali-muted-foreground text-lg text-center mt-4 leading-relaxed">
               {item.description}
             </Text>
 
-           
             <View className="flex-row flex-wrap justify-center gap-3 mt-6">
               {item.features.map((feature, idx) => (
                 <View
@@ -84,13 +84,12 @@ export default function Onboarding() {
         ))}
       </Swiper>
 
-    
       <View className="w-full px-8 pb-10 mt-4 text-white">
         <CustomButton
           title={activeIndex === onboarding.length - 1 ? "Get Started" : "Next"}
           onPress={handleNext}
           bgVariant="pali-primary"
-           iconRight={<Ionicons name="arrow-forward" size={20} color="white" />}
+          iconRight={<Ionicons name="arrow-forward" size={20} color="white" />}
         />
       </View>
     </SafeAreaView>

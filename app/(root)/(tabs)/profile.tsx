@@ -37,6 +37,10 @@ export default function Profile() {
     rating: 0,
     imageUrl: "",
   });
+  const [isPendingModalVisible, setPendingModalVisible] = useState(false);
+
+  const openPendingModal = () => setPendingModalVisible(true);
+  const closePendingModal = () => setPendingModalVisible(false);
 
   const fetchUser = async () => {
     try {
@@ -65,38 +69,37 @@ export default function Profile() {
   };
 
   const fetchDoctorStatus = async () => {
-  if (!user) return;
+    if (!user) return;
 
-  try {
-    setLoading(true);
-    const token = await AsyncStorage.getItem("token");
-    const headers: HeadersInit = token
-      ? { Authorization: `Bearer ${token}` }
-      : {};
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem("token");
+      const headers: HeadersInit = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
 
-      console.log(token)
+      console.log(token);
 
-    const data = await fetchAPI(
-      `${process.env.EXPO_PUBLIC_SERVER_URL}/api/doctors/current`,
-      {
-        headers,
+      const data = await fetchAPI(
+        `${process.env.EXPO_PUBLIC_SERVER_URL}/api/doctors/current`,
+        {
+          headers,
+        }
+      );
+
+      console.log(data);
+      if (data.success && data.data) {
+        setFetchedUser((prev: any) => ({ ...prev, doctorInfo: data.data }));
+        setUserType("doctor");
+      } else {
+        setFetchedUser((prev: any) => ({ ...prev, doctorInfo: null }));
       }
-    );
-
-   
-    console.log(data)
-    if (data.success && data.data) {
-      setFetchedUser((prev: any) => ({ ...prev, doctorInfo: data.data }));
-      setUserType("doctor");
-    } else {
-      setFetchedUser((prev: any) => ({ ...prev, doctorInfo: null }));
+    } catch (err) {
+      console.log("Error fetching doctor status:", err);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.log("Error fetching doctor status:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const fullName = user?.firstName + " " + user?.lastName;
 
@@ -148,16 +151,16 @@ export default function Profile() {
       console.log("Doctor request submitted:", data);
       setModalVisible(false);
       setForm({
-      fullName: "",
-      specialty: "",
-      bio: "",
-      education: "",
-      address: "",
-      latitude: "",
-      longitude: "",
-      rating: 0,
-      imageUrl: "",
-    });
+        fullName: "",
+        specialty: "",
+        bio: "",
+        education: "",
+        address: "",
+        latitude: "",
+        longitude: "",
+        rating: 0,
+        imageUrl: "",
+      });
     } catch (error) {
       console.error("Error submitting doctor request:", error);
     } finally {
@@ -166,9 +169,9 @@ export default function Profile() {
   };
 
   useEffect(() => {
-  fetchUser();
-  fetchDoctorStatus();
-}, []);
+    fetchUser();
+    fetchDoctorStatus();
+  }, []);
 
   const renderPatientProfile = () => (
     <>
@@ -707,43 +710,44 @@ export default function Profile() {
               )}
             </TouchableOpacity>
             {fetchedUser?.doctorInfo ? (
-  <View className="mb-4 items-center">
-    <Text className="text-gray-700 font-semibold mb-2">
-      Doctor Request Status:
-    </Text>
-    <View className="bg-yellow-100 px-4 py-2 rounded-2xl">
-      <Text className="text-yellow-800 font-bold">
-        {fetchedUser.doctorInfo.accountStatus}
-      </Text>
-    </View>
+              <View className="mb-4 items-center">
+                <Text className="text-gray-700 font-semibold mb-2">
+                  Doctor Request Status:
+                </Text>
+                <View className="bg-yellow-100 px-4 py-2 rounded-2xl">
+                  <Text className="text-yellow-800 font-bold">
+                    {fetchedUser.doctorInfo.accountStatus}
+                  </Text>
+                </View>
 
-    {fetchedUser.doctorInfo.accountStatus === "PENDING" && (
-      <TouchableOpacity
-        onPress={() => alert("Your doctor request is still pending")}
-        className="bg-teal-600 rounded-2xl py-4 px-6 mt-4"
-      >
-        <Text className="text-white font-bold text-base">
-          Check Status
-        </Text>
-      </TouchableOpacity>
-    )}
-  </View>
-) : (
-  <TouchableOpacity
-    onPress={submitDoctorRequest}
-    className="bg-teal-600 rounded-2xl py-4 px-6 mb-3 flex-row justify-center items-center"
-    disabled={Loading}
-  >
-    {Loading ? (
-      <ActivityIndicator size="small" color="white" />
-    ) : (
-      <Text className="text-white font-bold text-base">
-        Submit Request
-      </Text>
-    )}
-  </TouchableOpacity>
-)}
-
+                {fetchedUser.doctorInfo.accountStatus === "PENDING" && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      alert("Your doctor request is still pending")
+                    }
+                    className="bg-teal-600 rounded-2xl py-4 px-6 mt-4"
+                  >
+                    <Text className="text-white font-bold text-base">
+                      Check Status
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={submitDoctorRequest}
+                className="bg-teal-600 rounded-2xl py-4 px-6 mb-3 flex-row justify-center items-center"
+                disabled={Loading}
+              >
+                {Loading ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text className="text-white font-bold text-base">
+                    Submit Request
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               onPress={toggleModal}
