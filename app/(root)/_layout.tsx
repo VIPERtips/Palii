@@ -8,6 +8,10 @@ export default function Layout() {
         name="doctor-details/[doctorId]"
         options={{ headerShown: false }}
       />
+       <Stack.Screen
+        name="doctorAvailability"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }

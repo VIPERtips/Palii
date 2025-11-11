@@ -107,14 +107,14 @@ export default function Home() {
     },
   ];
 
-  // Doctor Quick Actions
+  
   const doctorActions = [
     {
       id: "appointments",
       label: "Today's Schedule",
       icon: "calendar-outline",
       color: "#0286FF",
-      route: "/schedule",
+      route: "/doctorAvailability",
     },
     {
       id: "patients",
@@ -394,7 +394,7 @@ export default function Home() {
           marginBottom: 12,
         }}
         renderItem={({ item }) => (
-          <QuickActionCard item={item} onPress={() => router.push("/")} />
+          <QuickActionCard item={item} onPress={() => router.push(item.route as any)} />
         )}
         contentContainerStyle={{
           paddingTop: 8,
