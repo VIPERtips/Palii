@@ -1,9 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 export default function AvailableDoctor({ doctor }: any) {
+  const handlePress = () => {
+    router.push({
+      pathname: "/doctor-details/[doctorId]",
+      params: { doctorId: doctor.doctorId },
+    });
+  };
   return (
     <TouchableOpacity
+     onPress={handlePress}
       activeOpacity={0.8}
       className="bg-white/8 rounded-3xl p-4 border border-white/10 mb-5"
       style={{
@@ -32,7 +40,7 @@ export default function AvailableDoctor({ doctor }: any) {
               borderRadius: 8,
               borderWidth: 2,
               borderColor: "#fff",
-              backgroundColor: doctor.available ? "#22c55e" : "#9ca3af", // green-500 or gray-400
+              backgroundColor: doctor.available ? "#22c55e" : "#9ca3af", 
             }}
           />
         </View>
